@@ -240,9 +240,9 @@ async function tryRefresh() {
       body: JSON.stringify({ refreshToken: S.refreshToken }),
     });
     const d = await r.json();
-    if (d.accessToken) {
-      S.token = d.accessToken;
-      localStorage.setItem('token', d.accessToken);
+    if (d.tokens?.accessToken) {
+      S.token = d.tokens.accessToken;
+      localStorage.setItem('token', d.tokens.accessToken);
       return true;
     }
   } catch(e) {}
@@ -267,10 +267,10 @@ async function doLogin() {
   err.style.display = 'none';
   try {
     const d = await api('POST', '/auth/login', { email, password: pass }, true);
-    S.token = d.accessToken;
-    S.refreshToken = d.refreshToken;
-    localStorage.setItem('token', d.accessToken);
-    localStorage.setItem('refreshToken', d.refreshToken);
+    S.token = d.tokens.accessToken;
+    S.refreshToken = d.tokens.refreshToken;
+    localStorage.setItem('token', d.tokens.accessToken);
+    localStorage.setItem('refreshToken', d.tokens.refreshToken);
     await initApp();
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 }
