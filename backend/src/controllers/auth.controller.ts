@@ -13,7 +13,8 @@ export async function registerHandler(req: Request, res: Response): Promise<void
     const { email, password, firstName, lastName } = req.body;
     const user = await authService.register(email, password, firstName, lastName);
     const { password: _, ...safeUser } = user.toJSON() as unknown as Record<string, unknown>;
-    res.status(201).json({ message: 'User registered successfully', user: safeUser });
+    const requiresVerification = process.env.NODE_ENV === 'production';
+    res.status(201).json({ message: 'User registered successfully', user: safeUser, requiresVerification });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Registration failed';
     res.status(400).json({ error: message });

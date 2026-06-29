@@ -38,6 +38,13 @@ services:
       ACTIVITY_CHECK_CRON: "0 0 * * 0"
       ACTIVITY_PENALTY_POINTS: 3
       ACTIVITY_MAX_INFRACTIONS: 3
+      SMTP_HOST: smtp.resend.com
+      SMTP_PORT: "465"
+      SMTP_SECURE: "true"
+      SMTP_USER: resend
+      SMTP_PASS: ${RESEND_API_KEY}
+      SMTP_FROM: onboarding@resend.dev
+      APP_URL: http://localhost
     depends_on:
       postgres:
         condition: service_healthy

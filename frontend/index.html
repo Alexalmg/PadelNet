@@ -502,11 +502,17 @@ async function doRegister() {
   const err = document.getElementById('reg-err');
   err.style.display = 'none';
   try {
-    await api('POST', '/auth/register', { firstName, lastName, email, password }, true);
+    const d = await api('POST', '/auth/register', { firstName, lastName, email, password }, true);
     document.getElementById('login-email').value = email;
     switchAuthTab('login');
-    document.getElementById('verify-notice-email').textContent = email;
-    document.getElementById('verify-notice').style.display = 'block';
+    if (d.requiresVerification) {
+      document.getElementById('verify-notice-email').textContent = email;
+      document.getElementById('verify-notice').style.display = 'block';
+    } else {
+      const ok = document.getElementById('login-err');
+      ok.style.cssText = 'display:block;color:var(--green)';
+      ok.textContent = '✅ Cuenta creada. Ya puedes iniciar sesión.';
+    }
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 }
 

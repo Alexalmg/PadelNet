@@ -16,6 +16,14 @@ export async function register(email: string, password: string, firstName: strin
   if (existing) throw new Error('Email already in use');
 
   const hashed = await bcrypt.hash(password, 10);
+  const isDev = process.env.NODE_ENV !== 'production';
+
+  if (isDev) {
+    // En desarrollo: verificación automática, sin email
+    const user = await User.create({ email, password: hashed, firstName, lastName, emailVerified: true });
+    return user;
+  }
+
   const emailVerificationToken = crypto.randomBytes(32).toString('hex');
   const user = await User.create({ email, password: hashed, firstName, lastName, emailVerificationToken });
 
