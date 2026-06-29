@@ -16,16 +16,21 @@ export async function register(email: string, password: string, firstName: strin
   if (existing) throw new Error('Email already in use');
 
   const hashed = await bcrypt.hash(password, 10);
-  const isDev = process.env.NODE_ENV !== 'production';
+  const smtpConfigured = !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+  const isProd = process.env.NODE_ENV === 'production';
 
-  if (isDev) {
-    // En desarrollo: verificación automática, sin email
+  if (!smtpConfigured) {
+    // Sin SMTP: auto-verificar (modo dev sin config de email)
     const user = await User.create({ email, password: hashed, firstName, lastName, emailVerified: true });
+    console.log(`📧 Sin SMTP configurado — usuario ${email} auto-verificado`);
     return user;
   }
 
+  // Con SMTP: enviar email siempre
   const emailVerificationToken = crypto.randomBytes(32).toString('hex');
-  const user = await User.create({ email, password: hashed, firstName, lastName, emailVerificationToken });
+  // En producción requiere verificación; en dev auto-verifica pero igualmente envía el email para probar
+  const emailVerified = !isProd;
+  const user = await User.create({ email, password: hashed, firstName, lastName, emailVerificationToken, emailVerified });
 
   sendVerificationEmail(email, firstName, emailVerificationToken).catch(err =>
     console.error('Error enviando email de verificación:', err)
