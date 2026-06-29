@@ -183,11 +183,19 @@ tr.clickable:hover{background:var(--card);cursor:pointer}
 
     <div style="display:flex;flex-direction:column;gap:14px">
       <div style="text-align:center;margin-bottom:8px">
-        <div id="ob-avatar-preview" style="width:90px;height:90px;border-radius:50%;background:var(--card);border:2px solid var(--border);margin:0 auto 10px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:36px">👤</div>
-        <div class="form-group" style="margin:0">
-          <label>URL de foto de perfil</label>
-          <input id="ob-photo" type="url" placeholder="https://…/tu-foto.jpg" oninput="previewAvatar(this.value)">
+        <div id="ob-avatar-preview" style="width:100px;height:100px;border-radius:50%;background:var(--card);border:2px solid var(--border);margin:0 auto 12px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:40px;cursor:pointer" onclick="document.getElementById('ob-file-input').click()">👤</div>
+        <input id="ob-photo-data" type="hidden">
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+            📁 Desde archivo
+            <input id="ob-file-input" type="file" accept="image/*" style="display:none" onchange="handlePhotoFile(this)">
+          </label>
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+            📷 Usar cámara
+            <input type="file" accept="image/*" capture="user" style="display:none" onchange="handlePhotoFile(this)">
+          </label>
         </div>
+        <p style="font-size:11px;color:var(--muted);margin-top:6px">O haz clic en el círculo para elegir imagen</p>
       </div>
 
       <div class="form-group">
@@ -419,40 +427,63 @@ async function initApp() {
 function showOnboarding() {
   const bg = document.getElementById('onboarding-bg');
   bg.style.display = 'flex';
+  document.getElementById('ob-photo-data').value = '';
   if (S.user.profilePhotoUrl) {
-    document.getElementById('ob-photo').value = S.user.profilePhotoUrl;
-    previewAvatar(S.user.profilePhotoUrl);
+    document.getElementById('ob-photo-data').value = S.user.profilePhotoUrl;
+    setAvatarPreview(S.user.profilePhotoUrl);
+  } else {
+    document.getElementById('ob-avatar-preview').innerHTML = '👤';
   }
-  if (S.user.username) document.getElementById('ob-username').value = S.user.username;
-  if (S.user.padelLevel) document.getElementById('ob-level').value = S.user.padelLevel;
-  if (S.user.preferredSide) document.getElementById('ob-side').value = S.user.preferredSide;
-  if (S.user.yearsPlaying) document.getElementById('ob-years').value = S.user.yearsPlaying;
-  if (S.user.preferredCourt) document.getElementById('ob-court').value = S.user.preferredCourt;
-  if (S.user.phone) document.getElementById('ob-phone').value = S.user.phone;
-  if (S.user.bio) document.getElementById('ob-bio').value = S.user.bio;
+  if (S.user.username)      document.getElementById('ob-username').value    = S.user.username;
+  if (S.user.padelLevel)    document.getElementById('ob-level').value        = S.user.padelLevel;
+  if (S.user.preferredSide) document.getElementById('ob-side').value         = S.user.preferredSide;
+  if (S.user.yearsPlaying)  document.getElementById('ob-years').value        = S.user.yearsPlaying;
+  if (S.user.preferredCourt)document.getElementById('ob-court').value        = S.user.preferredCourt;
+  if (S.user.phone)         document.getElementById('ob-phone').value        = S.user.phone;
+  if (S.user.bio)           document.getElementById('ob-bio').value          = S.user.bio;
 }
 
-function previewAvatar(url) {
-  const el = document.getElementById('ob-avatar-preview');
-  if (url && url.startsWith('http')) {
-    el.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='👤'">`;
-  } else {
-    el.innerHTML = '👤';
-  }
+function setAvatarPreview(src) {
+  document.getElementById('ob-avatar-preview').innerHTML =
+    `<img src="${src}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='👤'">`;
+}
+
+function handlePhotoFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const MAX = 400;
+      let w = img.width, h = img.height;
+      if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+      else        { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      document.getElementById('ob-photo-data').value = dataUrl;
+      setAvatarPreview(dataUrl);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 async function saveOnboarding() {
   const err = document.getElementById('ob-err');
   err.style.display = 'none';
+  const photo = document.getElementById('ob-photo-data').value.trim();
   const body = {
-    username:       document.getElementById('ob-username').value.trim() || undefined,
-    profilePhotoUrl: document.getElementById('ob-photo').value.trim() || undefined,
-    padelLevel:     document.getElementById('ob-level').value || undefined,
-    preferredSide:  document.getElementById('ob-side').value || undefined,
-    yearsPlaying:   document.getElementById('ob-years').value || undefined,
-    preferredCourt: document.getElementById('ob-court').value || undefined,
-    phone:          document.getElementById('ob-phone').value.trim() || undefined,
-    bio:            document.getElementById('ob-bio').value.trim() || undefined,
+    username:        document.getElementById('ob-username').value.trim()  || undefined,
+    profilePhotoUrl: photo                                                 || undefined,
+    padelLevel:      document.getElementById('ob-level').value            || undefined,
+    preferredSide:   document.getElementById('ob-side').value             || undefined,
+    yearsPlaying:    document.getElementById('ob-years').value            || undefined,
+    preferredCourt:  document.getElementById('ob-court').value            || undefined,
+    phone:           document.getElementById('ob-phone').value.trim()     || undefined,
+    bio:             document.getElementById('ob-bio').value.trim()       || undefined,
   };
   try {
     const d = await api('PUT', '/users/me', body);
@@ -1225,14 +1256,46 @@ async function loadProfile() {
     const teams = u.teamMemberships || [];
     const caps  = u.captainRequests || [];
 
-    let html = `<div class="page-title">Mi Perfil</div>
-    <div class="grid-2" style="margin-bottom:20px">
-      <div class="card">
-        <div class="card-title">Información personal</div>
-        <p style="font-size:18px;font-weight:700;margin-bottom:4px">${esc(u.firstName)} ${esc(u.lastName)}</p>
-        <p style="color:var(--muted);margin-bottom:8px">${u.email}</p>
-        <span class="status status-${u.role}">${statusLabel(u.role)}</span>
+    const levelLabel = { iniciacion:'Iniciación', intermedio:'Intermedio', avanzado:'Avanzado', competicion:'Competición' };
+    const sideLabel  = { drive:'Drive (derecha)', reves:'Revés (izquierda)', ambos:'Me adapto' };
+    const courtLabel = { indoor:'Indoor (cristal)', outdoor:'Outdoor', ambas:'Ambas' };
+
+    let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div class="page-title" style="margin:0">Mi Perfil</div>
+      <button class="btn btn-secondary btn-sm" onclick="showOnboarding()">✏️ Editar perfil</button>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div style="width:88px;height:88px;border-radius:50%;background:var(--card);border:2px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:36px;cursor:pointer" onclick="showOnboarding()">
+          ${u.profilePhotoUrl ? `<img src="${u.profilePhotoUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='👤'">` : '👤'}
+        </div>
+        <div style="flex:1;min-width:180px">
+          <div style="font-size:20px;font-weight:700">${esc(u.firstName)} ${esc(u.lastName)}</div>
+          ${u.username ? `<div style="color:var(--accent);font-size:14px;margin-top:2px">@${esc(u.username)}</div>` : ''}
+          <div style="margin-top:8px"><span class="status status-${u.role}">${statusLabel(u.role)}</span></div>
+          <div style="margin-top:6px;font-size:13px;color:var(--muted)">${u.email}${u.phone?` · ${esc(u.phone)}`:''}</div>
+        </div>
       </div>
+      ${u.bio ? `<p style="margin-top:14px;font-size:14px;color:var(--muted);line-height:1.5;font-style:italic;border-top:1px solid var(--border);padding-top:12px">"${esc(u.bio)}"</p>` : ''}
+    </div>
+
+    ${(u.padelLevel||u.preferredSide||u.yearsPlaying||u.preferredCourt) ? `
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">🏓 Mi Perfil Padel</div>
+      <div class="grid-2">
+        ${u.padelLevel    ?`<div class="stat-card"><div class="lbl">Nivel</div><div class="val" style="font-size:13px">${levelLabel[u.padelLevel]||u.padelLevel}</div></div>`:''}
+        ${u.preferredSide ?`<div class="stat-card"><div class="lbl">Lado preferido</div><div class="val" style="font-size:13px">${sideLabel[u.preferredSide]||u.preferredSide}</div></div>`:''}
+        ${u.yearsPlaying  ?`<div class="stat-card"><div class="lbl">Años jugando</div><div class="val">${u.yearsPlaying}</div></div>`:''}
+        ${u.preferredCourt?`<div class="stat-card"><div class="lbl">Pista</div><div class="val" style="font-size:13px">${courtLabel[u.preferredCourt]||u.preferredCourt}</div></div>`:''}
+      </div>
+    </div>` : `
+    <div class="card" style="margin-bottom:20px;text-align:center;padding:24px">
+      <p style="color:var(--muted);margin-bottom:12px">Aún no has completado tu perfil padel</p>
+      <button class="btn btn-sm" onclick="showOnboarding()">Completar ahora</button>
+    </div>`}
+
+    <div class="grid-2" style="margin-bottom:20px">
       <div class="card">
         <div class="card-title">Equipo</div>
         ${teams.length ? teams.map(t => `<p><b>${esc(t.team?.name)}</b></p>`).join('') : '<p style="color:var(--muted)">Sin equipo actualmente</p>'}
@@ -1344,13 +1407,50 @@ async function showUserDetail(id) {
     const teams = u.teamMemberships || [];
     const caps  = u.captainRequests || [];
 
-    let html = `<div class="grid-2" style="margin-bottom:16px">
-      <div class="stat-card"><div class="lbl">Rol</div><div class="val" style="font-size:14px"><span class="status status-${u.role}">${statusLabel(u.role)}</span></div></div>
-      <div class="stat-card"><div class="lbl">Email</div><div class="val" style="font-size:12px;word-break:break-all">${u.email}</div></div>
+    const levelLabel = { iniciacion:'Iniciación', intermedio:'Intermedio', avanzado:'Avanzado', competicion:'Competición' };
+    const sideLabel  = { drive:'Drive (derecha)', reves:'Revés (izquierda)', ambos:'Me adapto' };
+    const courtLabel = { indoor:'Indoor (cristal)', outdoor:'Outdoor', ambas:'Ambas' };
+
+    // Header con foto y nombre
+    let html = `<div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+      <div style="width:72px;height:72px;border-radius:50%;background:var(--card);border:2px solid var(--border);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px">
+        ${u.profilePhotoUrl ? `<img src="${u.profilePhotoUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='👤'">` : '👤'}
+      </div>
+      <div>
+        <div style="font-size:18px;font-weight:700">${esc(u.firstName)} ${esc(u.lastName)}</div>
+        ${u.username ? `<div style="color:var(--accent);font-size:13px;margin-top:2px">@${esc(u.username)}</div>` : ''}
+        <div style="margin-top:6px"><span class="status status-${u.role}">${statusLabel(u.role)}</span></div>
+      </div>
+    </div>`;
+
+    if (u.bio) {
+      html += `<div class="card" style="margin-bottom:16px">
+        <p style="font-size:14px;color:var(--muted);line-height:1.5;font-style:italic">"${esc(u.bio)}"</p>
+      </div>`;
+    }
+
+    // Info padel
+    const hasPadel = u.padelLevel || u.preferredSide || u.yearsPlaying || u.preferredCourt;
+    if (hasPadel) {
+      html += `<div class="card" style="margin-bottom:16px">
+        <div class="card-title">🏓 Perfil Padel</div>
+        <div class="grid-2">`;
+      if (u.padelLevel)    html += `<div class="stat-card"><div class="lbl">Nivel</div><div class="val" style="font-size:13px">${levelLabel[u.padelLevel]||u.padelLevel}</div></div>`;
+      if (u.preferredSide) html += `<div class="stat-card"><div class="lbl">Lado</div><div class="val" style="font-size:13px">${sideLabel[u.preferredSide]||u.preferredSide}</div></div>`;
+      if (u.yearsPlaying)  html += `<div class="stat-card"><div class="lbl">Años jugando</div><div class="val">${u.yearsPlaying}</div></div>`;
+      if (u.preferredCourt)html += `<div class="stat-card"><div class="lbl">Pista</div><div class="val" style="font-size:13px">${courtLabel[u.preferredCourt]||u.preferredCourt}</div></div>`;
+      html += `</div></div>`;
+    }
+
+    // Contacto
+    html += `<div class="card" style="margin-bottom:16px">
+      <div class="card-title">Contacto</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:4px">📧 ${u.email}</p>
+      ${u.phone ? `<p style="font-size:13px;color:var(--muted)">📞 ${esc(u.phone)}</p>` : ''}
     </div>`;
 
     if (teams.length) {
-      html += `<div class="card-title">Equipos</div>`;
+      html += `<div class="card-title" style="margin-bottom:8px">Equipos</div>`;
       html += teams.map(t => `<p style="margin-bottom:6px">${esc(t.team?.name)}</p>`).join('');
     }
 
