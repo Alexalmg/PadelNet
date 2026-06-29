@@ -121,7 +121,7 @@ tr.clickable:hover{background:var(--card);cursor:pointer}
 #onboarding-bg.show{display:flex!important}
 
 /* ── Bottom navigation (mobile) ── */
-#bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:150;padding-bottom:env(safe-area-inset-bottom,0)}
+#bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:150;padding-bottom:env(safe-area-inset-bottom,0);-webkit-transform:translateZ(0);transform:translateZ(0);-webkit-backface-visibility:hidden;backface-visibility:hidden}
 #bottom-nav .bnav-scroller{display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 #bottom-nav .bnav-scroller::-webkit-scrollbar{display:none}
 #bottom-nav button{flex:0 0 auto;min-width:62px;background:none;color:var(--muted);padding:8px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;border-radius:0;border:none;position:relative;transition:color .15s}
@@ -212,10 +212,10 @@ tr.clickable:hover{background:var(--card);cursor:pointer}
     </div>
   </header>
   <main id="main-content"></main>
-  <nav id="bottom-nav">
-    <div class="bnav-scroller" id="bottom-nav-inner"></div>
-  </nav>
 </div>
+<nav id="bottom-nav">
+  <div class="bnav-scroller" id="bottom-nav-inner"></div>
+</nav>
 
 <!-- ONBOARDING MODAL -->
 <div id="onboarding-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:flex-end;justify-content:center;padding:0">
