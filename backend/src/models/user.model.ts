@@ -7,6 +7,19 @@ export enum UserRole {
   ADMIN = 'admin',
 }
 
+export enum PadelLevel {
+  INICIACION = 'iniciacion',
+  INTERMEDIO = 'intermedio',
+  AVANZADO   = 'avanzado',
+  COMPETICION = 'competicion',
+}
+
+export enum PreferredSide {
+  DRIVE  = 'drive',
+  REVES  = 'reves',
+  AMBOS  = 'ambos',
+}
+
 interface UserAttributes {
   id: number;
   email: string;
@@ -16,11 +29,19 @@ interface UserAttributes {
   phone?: string;
   role: UserRole;
   isActive: boolean;
+  isProfileComplete: boolean;
+  username?: string;
+  profilePhotoUrl?: string;
+  bio?: string;
+  padelLevel?: PadelLevel;
+  preferredSide?: PreferredSide;
+  yearsPlaying?: number;
+  preferredCourt?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'phone' | 'role' | 'isActive'> {}
+interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'phone' | 'role' | 'isActive' | 'isProfileComplete' | 'username' | 'profilePhotoUrl' | 'bio' | 'padelLevel' | 'preferredSide' | 'yearsPlaying' | 'preferredCourt'> {}
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   declare id: number;
@@ -31,6 +52,14 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   declare phone?: string;
   declare role: UserRole;
   declare isActive: boolean;
+  declare isProfileComplete: boolean;
+  declare username?: string;
+  declare profilePhotoUrl?: string;
+  declare bio?: string;
+  declare padelLevel?: PadelLevel;
+  declare preferredSide?: PreferredSide;
+  declare yearsPlaying?: number;
+  declare preferredCourt?: string;
   declare createdAt: Date;
   declare updatedAt: Date;
 }
@@ -44,6 +73,14 @@ User.init({
   phone: { type: DataTypes.STRING(20), allowNull: true },
   role: { type: DataTypes.STRING(20), defaultValue: UserRole.PLAYER },
   isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
+  isProfileComplete: { type: DataTypes.BOOLEAN, defaultValue: false },
+  username: { type: DataTypes.STRING(50), allowNull: true, unique: true },
+  profilePhotoUrl: { type: DataTypes.TEXT, allowNull: true },
+  bio: { type: DataTypes.STRING(500), allowNull: true },
+  padelLevel: { type: DataTypes.STRING(20), allowNull: true },
+  preferredSide: { type: DataTypes.STRING(10), allowNull: true },
+  yearsPlaying: { type: DataTypes.INTEGER, allowNull: true },
+  preferredCourt: { type: DataTypes.STRING(20), allowNull: true },
 }, {
   sequelize,
   tableName: 'users',

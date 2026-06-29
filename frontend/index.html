@@ -115,6 +115,7 @@ tr.clickable:hover{background:var(--card);cursor:pointer}
 .star-rating span{font-size:28px;cursor:pointer;color:var(--border);transition:color .15s;user-select:none}
 .star-rating span.lit{color:var(--yellow)}
 .bell-wrap{position:relative}
+#onboarding-bg.show{display:flex!important}
 </style>
 </head>
 <body>
@@ -169,6 +170,85 @@ tr.clickable:hover{background:var(--card);cursor:pointer}
     </div>
   </header>
   <main id="main-content"></main>
+</div>
+
+<!-- ONBOARDING MODAL -->
+<div id="onboarding-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;padding:16px">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:32px">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:48px;margin-bottom:8px">🏓</div>
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:6px">¡Completa tu perfil!</h2>
+      <p style="color:var(--muted);font-size:14px">Cuéntanos un poco sobre ti para que tus compañeros de liga te conozcan mejor</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="text-align:center;margin-bottom:8px">
+        <div id="ob-avatar-preview" style="width:90px;height:90px;border-radius:50%;background:var(--card);border:2px solid var(--border);margin:0 auto 10px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:36px">👤</div>
+        <div class="form-group" style="margin:0">
+          <label>URL de foto de perfil</label>
+          <input id="ob-photo" type="url" placeholder="https://…/tu-foto.jpg" oninput="previewAvatar(this.value)">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Nombre de usuario <span style="color:var(--muted);font-weight:400">(@handle)</span></label>
+        <input id="ob-username" type="text" placeholder="ej. alexpadel92" maxlength="50">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nivel de juego</label>
+          <select id="ob-level">
+            <option value="">Selecciona…</option>
+            <option value="iniciacion">Iniciación</option>
+            <option value="intermedio">Intermedio</option>
+            <option value="avanzado">Avanzado</option>
+            <option value="competicion">Competición</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Lado preferido</label>
+          <select id="ob-side">
+            <option value="">Selecciona…</option>
+            <option value="drive">Drive (derecha)</option>
+            <option value="reves">Revés (izquierda)</option>
+            <option value="ambos">Me adapto</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Años jugando</label>
+          <input id="ob-years" type="number" min="0" max="50" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Pista preferida</label>
+          <select id="ob-court">
+            <option value="">Selecciona…</option>
+            <option value="indoor">Indoor (cristal)</option>
+            <option value="outdoor">Outdoor</option>
+            <option value="ambas">Ambas</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Teléfono <span style="color:var(--muted);font-weight:400">(opcional)</span></label>
+        <input id="ob-phone" type="tel" placeholder="+34 600 000 000">
+      </div>
+
+      <div class="form-group">
+        <label>Bio <span style="color:var(--muted);font-weight:400">(opcional, máx. 500 car.)</span></label>
+        <textarea id="ob-bio" rows="3" maxlength="500" placeholder="Ej. Llevo 5 años jugando, busco mejorar el smash…" style="resize:vertical"></textarea>
+      </div>
+
+      <p id="ob-err" class="error-msg"></p>
+
+      <button class="btn" style="width:100%;padding:12px;font-size:15px;margin-top:4px" onclick="saveOnboarding()">Guardar y empezar 🚀</button>
+      <button onclick="skipOnboarding()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:4px">Ahora no, completar más tarde</button>
+    </div>
+  </div>
 </div>
 
 <!-- MATCH DETAIL MODAL -->
@@ -330,6 +410,62 @@ async function initApp() {
   buildNav();
   navigate('wall');
   startNotifPolling();
+
+  if (!S.user.isProfileComplete) {
+    showOnboarding();
+  }
+}
+
+function showOnboarding() {
+  const bg = document.getElementById('onboarding-bg');
+  bg.style.display = 'flex';
+  if (S.user.profilePhotoUrl) {
+    document.getElementById('ob-photo').value = S.user.profilePhotoUrl;
+    previewAvatar(S.user.profilePhotoUrl);
+  }
+  if (S.user.username) document.getElementById('ob-username').value = S.user.username;
+  if (S.user.padelLevel) document.getElementById('ob-level').value = S.user.padelLevel;
+  if (S.user.preferredSide) document.getElementById('ob-side').value = S.user.preferredSide;
+  if (S.user.yearsPlaying) document.getElementById('ob-years').value = S.user.yearsPlaying;
+  if (S.user.preferredCourt) document.getElementById('ob-court').value = S.user.preferredCourt;
+  if (S.user.phone) document.getElementById('ob-phone').value = S.user.phone;
+  if (S.user.bio) document.getElementById('ob-bio').value = S.user.bio;
+}
+
+function previewAvatar(url) {
+  const el = document.getElementById('ob-avatar-preview');
+  if (url && url.startsWith('http')) {
+    el.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='👤'">`;
+  } else {
+    el.innerHTML = '👤';
+  }
+}
+
+async function saveOnboarding() {
+  const err = document.getElementById('ob-err');
+  err.style.display = 'none';
+  const body = {
+    username:       document.getElementById('ob-username').value.trim() || undefined,
+    profilePhotoUrl: document.getElementById('ob-photo').value.trim() || undefined,
+    padelLevel:     document.getElementById('ob-level').value || undefined,
+    preferredSide:  document.getElementById('ob-side').value || undefined,
+    yearsPlaying:   document.getElementById('ob-years').value || undefined,
+    preferredCourt: document.getElementById('ob-court').value || undefined,
+    phone:          document.getElementById('ob-phone').value.trim() || undefined,
+    bio:            document.getElementById('ob-bio').value.trim() || undefined,
+  };
+  try {
+    const d = await api('PUT', '/users/me', body);
+    S.user = d.user;
+    document.getElementById('onboarding-bg').style.display = 'none';
+  } catch(e) {
+    err.textContent = e.message;
+    err.style.display = 'block';
+  }
+}
+
+function skipOnboarding() {
+  document.getElementById('onboarding-bg').style.display = 'none';
 }
 
 function buildNav() {

@@ -49,13 +49,21 @@ app.use('/api/sponsors', sponsorsRoutes);
 app.use('/api/announcements', announcementsRoutes);
 
 async function runSchemaMigrations() {
-  // Extend matches.status constraint to include new statuses
   await sequelize.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS location VARCHAR(255)`);
   await sequelize.query(`ALTER TABLE matches DROP CONSTRAINT IF EXISTS matches_status_check`);
   await sequelize.query(`
     ALTER TABLE matches ADD CONSTRAINT matches_status_check
     CHECK (status IN ('pending_proposal','proposed','scheduled','in_progress','completed','cancelled','disputed'))
   `);
+  // User profile fields
+  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "isProfileComplete" BOOLEAN NOT NULL DEFAULT false`);
+  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(50) UNIQUE`);
+  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "profilePhotoUrl" TEXT`);
+  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bio VARCHAR(500)`);
+  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "padelLevel" VARCHAR(20)`);
+  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "preferredSide" VARCHAR(10)`);
+  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "yearsPlaying" INTEGER`);
+  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "preferredCourt" VARCHAR(20)`);
 }
 
 // Serve frontend in production (when files are present alongside dist/)
