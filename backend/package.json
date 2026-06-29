@@ -17,6 +17,7 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^3.0.3",
+    "node-mailjet": "^6.0.11",
     "nodemailer": "^9.0.1",
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
