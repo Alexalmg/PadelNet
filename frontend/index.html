@@ -1620,8 +1620,8 @@ async function showUserDetail(id) {
         ${cr.message ? `<p style="color:var(--muted);margin-top:4px">${esc(cr.message)}</p>` : ''}`;
       if (S.user.role === 'admin' && cr.status === 'pending') {
         html += `<div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn-green btn btn-sm" onclick="reviewCap(${cr.id},'approved')">✓ Aprobar</button>
-          <button class="btn-red btn btn-sm" onclick="reviewCap(${cr.id},'rejected')">✕ Rechazar</button>
+          <button class="btn-green btn btn-sm" onclick="reviewCap(${cr.id},'approve')">✓ Aprobar</button>
+          <button class="btn-red btn btn-sm" onclick="reviewCap(${cr.id},'reject')">✕ Rechazar</button>
         </div>`;
       }
       html += `</div>`;
@@ -1795,8 +1795,8 @@ async function refreshNotifications() {
           <div class="notif-title">Solicitud de capitán</div>
           <div class="notif-sub">${cr.user?.firstName} ${cr.user?.lastName} — ${cr.user?.email}</div>
           <div class="notif-actions">
-            <button class="btn-green btn btn-sm" onclick="reviewCap(${cr.id},'approved');refreshNotifBadge()">✓ Aprobar</button>
-            <button class="btn-red btn btn-sm" onclick="reviewCap(${cr.id},'rejected');refreshNotifBadge()">✕ Rechazar</button>
+            <button class="btn-green btn btn-sm" onclick="reviewCap(${cr.id},'approve');refreshNotifBadge()">✓ Aprobar</button>
+            <button class="btn-red btn btn-sm" onclick="reviewCap(${cr.id},'reject');refreshNotifBadge()">✕ Rechazar</button>
           </div>
         </div>`;
       }
