@@ -1,7 +1,6 @@
 import nodemailer from 'nodemailer';
 
 let transporter: nodemailer.Transporter | null = null;
-let testAccount: { user: string; pass: string } | null = null;
 
 async function getTransporter() {
   if (transporter) return transporter;
@@ -13,17 +12,18 @@ async function getTransporter() {
       secure: process.env.SMTP_SECURE === 'true',
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
     });
+    // Verifica la conexión al arrancar
+    await transporter.verify();
+    console.log(`📧 SMTP listo: ${process.env.SMTP_HOST}`);
   } else {
-    // Entorno de desarrollo: usar Ethereal (email de prueba real, visible en browser)
-    testAccount = await nodemailer.createTestAccount();
+    const testAccount = await nodemailer.createTestAccount();
     transporter = nodemailer.createTransport({
       host: 'smtp.ethereal.email',
       port: 587,
       secure: false,
       auth: { user: testAccount.user, pass: testAccount.pass },
     });
-    console.log('📧 Email dev mode: usando Ethereal Email');
-    console.log(`   User: ${testAccount.user}`);
+    console.log('📧 Email dev mode (Ethereal)');
   }
 
   return transporter;
@@ -32,11 +32,12 @@ async function getTransporter() {
 export async function sendVerificationEmail(to: string, firstName: string, token: string) {
   const appUrl = process.env.APP_URL || 'http://localhost';
   const verifyUrl = `${appUrl}/api/auth/verify/${token}`;
+  const from = process.env.SMTP_FROM || 'noreply@padelnet.app';
 
   const transport = await getTransporter();
 
   const info = await transport.sendMail({
-    from: `"PadelNet ⚡" <${process.env.SMTP_FROM || 'noreply@padelnet.app'}>`,
+    from: `"PadelNet ⚡" <${from}>`,
     to,
     subject: '⚡ Verifica tu cuenta en PadelNet',
     html: `
@@ -57,22 +58,18 @@ export async function sendVerificationEmail(to: string, firstName: string, token
         </p>
         <hr style="border:none;border-top:1px solid #2e3250;margin:20px 0">
         <p style="font-size:11px;color:#8892b0">
-          Si el botón no funciona, copia este enlace: <br>
+          Si el botón no funciona, copia este enlace:<br>
           <span style="color:#4f8ef7">${verifyUrl}</span>
         </p>
       </div>
     `,
   });
 
-  // En desarrollo muestra la URL del email en consola
   const previewUrl = nodemailer.getTestMessageUrl(info);
   if (previewUrl) {
-    console.log('');
-    console.log('📧 ─────────────────────────────────────────');
-    console.log(`   Email de verificación enviado a: ${to}`);
-    console.log(`   👉 VER EMAIL EN BROWSER: ${previewUrl}`);
-    console.log('   ─────────────────────────────────────────');
-    console.log('');
+    console.log(`📧 Preview: ${previewUrl}`);
+  } else {
+    console.log(`📧 Email enviado a ${to} (messageId: ${info.messageId})`);
   }
 
   return info;

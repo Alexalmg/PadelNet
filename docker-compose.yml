@@ -38,12 +38,12 @@ services:
       ACTIVITY_CHECK_CRON: "0 0 * * 0"
       ACTIVITY_PENALTY_POINTS: 3
       ACTIVITY_MAX_INFRACTIONS: 3
-      SMTP_HOST: smtp.resend.com
-      SMTP_PORT: "465"
-      SMTP_SECURE: "true"
-      SMTP_USER: resend
-      SMTP_PASS: ${RESEND_API_KEY}
-      SMTP_FROM: onboarding@resend.dev
+      SMTP_HOST: in-v3.mailjet.com
+      SMTP_PORT: "587"
+      SMTP_SECURE: "false"
+      SMTP_USER: ${MAILJET_API_KEY}
+      SMTP_PASS: ${MAILJET_SECRET_KEY}
+      SMTP_FROM: ${SMTP_FROM_EMAIL}
       APP_URL: http://localhost
     depends_on:
       postgres:
