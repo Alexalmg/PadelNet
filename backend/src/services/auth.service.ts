@@ -1,7 +1,9 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { User, UserRole } from '../models';
 import { jwtConfig } from '../config/jwt';
+import { sendVerificationEmail } from './email.service';
 
 function generateTokens(userId: number, role: UserRole) {
   const accessToken = jwt.sign({ userId, role }, jwtConfig.secret, { expiresIn: jwtConfig.expiresIn } as jwt.SignOptions);
@@ -14,8 +16,32 @@ export async function register(email: string, password: string, firstName: strin
   if (existing) throw new Error('Email already in use');
 
   const hashed = await bcrypt.hash(password, 10);
-  const user = await User.create({ email, password: hashed, firstName, lastName });
+  const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+  const user = await User.create({ email, password: hashed, firstName, lastName, emailVerificationToken });
+
+  sendVerificationEmail(email, firstName, emailVerificationToken).catch(err =>
+    console.error('Error enviando email de verificación:', err)
+  );
+
   return user;
+}
+
+export async function verifyEmail(token: string) {
+  const user = await User.findOne({ where: { emailVerificationToken: token } });
+  if (!user) throw new Error('Token inválido o expirado');
+
+  await user.update({ emailVerified: true, emailVerificationToken: undefined });
+  return user;
+}
+
+export async function resendVerification(email: string) {
+  const user = await User.findOne({ where: { email } });
+  if (!user) throw new Error('Email no encontrado');
+  if (user.emailVerified) throw new Error('La cuenta ya está verificada');
+
+  const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+  await user.update({ emailVerificationToken });
+  await sendVerificationEmail(email, user.firstName, emailVerificationToken);
 }
 
 export async function login(email: string, password: string) {
@@ -24,6 +50,8 @@ export async function login(email: string, password: string) {
 
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) throw new Error('Invalid credentials');
+
+  if (!user.emailVerified) throw new Error('EMAIL_NOT_VERIFIED');
 
   const tokens = generateTokens(user.id, user.role);
   return { user, tokens };

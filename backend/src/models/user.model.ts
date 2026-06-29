@@ -30,6 +30,8 @@ interface UserAttributes {
   role: UserRole;
   isActive: boolean;
   isProfileComplete: boolean;
+  emailVerified: boolean;
+  emailVerificationToken?: string;
   username?: string;
   profilePhotoUrl?: string;
   bio?: string;
@@ -41,7 +43,7 @@ interface UserAttributes {
   updatedAt?: Date;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'phone' | 'role' | 'isActive' | 'isProfileComplete' | 'username' | 'profilePhotoUrl' | 'bio' | 'padelLevel' | 'preferredSide' | 'yearsPlaying' | 'preferredCourt'> {}
+interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'phone' | 'role' | 'isActive' | 'isProfileComplete' | 'emailVerified' | 'emailVerificationToken' | 'username' | 'profilePhotoUrl' | 'bio' | 'padelLevel' | 'preferredSide' | 'yearsPlaying' | 'preferredCourt'> {}
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   declare id: number;
@@ -53,6 +55,8 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   declare role: UserRole;
   declare isActive: boolean;
   declare isProfileComplete: boolean;
+  declare emailVerified: boolean;
+  declare emailVerificationToken?: string;
   declare username?: string;
   declare profilePhotoUrl?: string;
   declare bio?: string;
@@ -74,6 +78,8 @@ User.init({
   role: { type: DataTypes.STRING(20), defaultValue: UserRole.PLAYER },
   isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
   isProfileComplete: { type: DataTypes.BOOLEAN, defaultValue: false },
+  emailVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
+  emailVerificationToken: { type: DataTypes.STRING(64), allowNull: true },
   username: { type: DataTypes.STRING(50), allowNull: true, unique: true },
   profilePhotoUrl: { type: DataTypes.TEXT, allowNull: true },
   bio: { type: DataTypes.STRING(500), allowNull: true },

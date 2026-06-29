@@ -55,6 +55,11 @@ async function runSchemaMigrations() {
     ALTER TABLE matches ADD CONSTRAINT matches_status_check
     CHECK (status IN ('pending_proposal','proposed','scheduled','in_progress','completed','cancelled','disputed'))
   `);
+  // Email verification fields
+  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "emailVerified" BOOLEAN NOT NULL DEFAULT false`);
+  await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "emailVerificationToken" VARCHAR(64)`);
+  // Mark all pre-existing users (seed/admin) as verified
+  await sequelize.query(`UPDATE users SET "emailVerified" = true WHERE "emailVerified" = false AND "createdAt" < NOW() - interval '1 minute'`);
   // User profile fields
   await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "isProfileComplete" BOOLEAN NOT NULL DEFAULT false`);
   await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(50) UNIQUE`);
