@@ -1,11 +1,12 @@
-import { Match, MatchProposal, Team } from '../models';
+import { Match, MatchProposal, Team, Club } from '../models';
 
 export async function proposeDate(
   matchId: number,
   userId: number,
   proposedDate: Date,
   location: string,
-  message: string
+  message: string,
+  clubId?: number
 ) {
   const match = await Match.findByPk(matchId, {
     include: [
@@ -38,12 +39,19 @@ export async function proposeDate(
     }
   }
 
+  let resolvedLocation: string | undefined = location || undefined;
+  if (clubId && !resolvedLocation) {
+    const club = await Club.findByPk(clubId);
+    resolvedLocation = club?.name;
+  }
+
   const proposal = await MatchProposal.create({
     matchId,
     proposingTeamId,
     proposedBy: userId,
     proposedDate,
-    location,
+    location: resolvedLocation,
+    clubId,
     message,
   });
 
@@ -78,6 +86,7 @@ export async function acceptProposal(proposalId: number, userId: number) {
     status: 'scheduled',
     matchDate: proposal.proposedDate,
     location: proposal.location,
+    ...(proposal.clubId ? { clubId: proposal.clubId } : {}),
   });
 
   return { proposal, match };

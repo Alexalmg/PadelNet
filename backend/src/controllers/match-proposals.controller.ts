@@ -3,10 +3,11 @@ import * as service from '../services/match-proposal.service';
 
 export async function propose(req: Request, res: Response): Promise<void> {
   try {
-    const { proposedDate, location, message } = req.body;
+    const { proposedDate, location, message, clubId } = req.body;
     if (!proposedDate) { res.status(400).json({ error: 'La fecha propuesta es obligatoria' }); return; }
+    if (!clubId) { res.status(400).json({ error: 'Debes seleccionar un club' }); return; }
     const proposal = await service.proposeDate(
-      parseInt(req.params.id), req.user!.id, new Date(proposedDate), location, message
+      parseInt(req.params.id), req.user!.id, new Date(proposedDate), location, message, parseInt(clubId)
     );
     res.status(201).json({ proposal });
   } catch (e: any) { res.status(400).json({ error: e.message }); }

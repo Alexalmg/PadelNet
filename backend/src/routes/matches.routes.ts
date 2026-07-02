@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticateToken, requireRole } from '../middleware/auth.middleware';
 import { listMatches, getMatch, confirmMatch } from '../controllers/matches.controller';
+import { setLineup, submitResults } from '../controllers/lineup.controller';
 import { propose, accept, reject, getProposals } from '../controllers/match-proposals.controller';
 import { getMessages, sendMessage } from '../controllers/chat.controller';
 import { raiseDispute, getMatchDispute } from '../controllers/disputes.controller';
@@ -13,6 +14,8 @@ router.use(authenticateToken);
 router.get('/', listMatches);
 router.get('/:id', getMatch);
 router.post('/:id/confirm', requireRole(UserRole.CAPTAIN, UserRole.ADMIN), confirmMatch);
+router.post('/:id/lineup', setLineup);
+router.post('/:id/results', submitResults);
 
 // Proposals
 router.get('/:id/proposals', getProposals);

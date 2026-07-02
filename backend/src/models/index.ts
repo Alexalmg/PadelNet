@@ -21,6 +21,9 @@ export { UserAchievement } from './user-achievement.model';
 export { Payment } from './payment.model';
 export { Sponsor } from './sponsor.model';
 export { Announcement } from './announcement.model';
+export { TeamInvitation } from './team-invitation.model';
+export { TeamJoinRequest } from './team-join-request.model';
+export { Club } from './club.model';
 
 import { User } from './user.model';
 import { Team } from './team.model';
@@ -45,6 +48,9 @@ import { UserAchievement } from './user-achievement.model';
 import { Payment } from './payment.model';
 import { Sponsor } from './sponsor.model';
 import { Announcement } from './announcement.model';
+import { TeamInvitation } from './team-invitation.model';
+import { TeamJoinRequest } from './team-join-request.model';
+import { Club } from './club.model';
 
 // Teams & Users
 Team.belongsTo(User, { foreignKey: 'captainId', as: 'captain' });
@@ -73,6 +79,11 @@ Match.belongsTo(Team, { foreignKey: 'homeTeamId', as: 'homeTeam' });
 Match.belongsTo(Team, { foreignKey: 'awayTeamId', as: 'awayTeam' });
 Match.hasMany(MatchResult, { foreignKey: 'matchId', as: 'results' });
 Match.hasMany(Lineup, { foreignKey: 'matchId', as: 'lineups' });
+
+// Lineups
+Lineup.belongsTo(Team, { foreignKey: 'teamId', as: 'lineupTeam' });
+Lineup.belongsTo(User, { foreignKey: 'player1Id', as: 'player1' });
+Lineup.belongsTo(User, { foreignKey: 'player2Id', as: 'player2' });
 
 // Penalties
 Penalty.belongsTo(Team, { foreignKey: 'teamId', as: 'team' });
@@ -135,3 +146,20 @@ Team.hasMany(Payment, { foreignKey: 'teamId', as: 'payments' });
 
 // Announcements
 Announcement.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
+
+// Team invitations
+TeamInvitation.belongsTo(Team, { foreignKey: 'teamId', as: 'team' });
+TeamInvitation.belongsTo(User, { foreignKey: 'invitedUserId', as: 'invitedUser' });
+TeamInvitation.belongsTo(User, { foreignKey: 'invitedBy', as: 'inviter' });
+Team.hasMany(TeamInvitation, { foreignKey: 'teamId', as: 'invitations' });
+User.hasMany(TeamInvitation, { foreignKey: 'invitedUserId', as: 'teamInvitations' });
+
+// Clubs & matches
+Match.belongsTo(Club, { foreignKey: 'clubId', as: 'club' });
+Club.hasMany(Match, { foreignKey: 'clubId', as: 'matches' });
+
+// Team join requests
+TeamJoinRequest.belongsTo(Team, { foreignKey: 'teamId', as: 'team' });
+TeamJoinRequest.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+Team.hasMany(TeamJoinRequest, { foreignKey: 'teamId', as: 'joinRequests' });
+User.hasMany(TeamJoinRequest, { foreignKey: 'userId', as: 'joinRequests' });

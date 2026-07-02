@@ -1,4 +1,4 @@
-import { UserRole, Team, CaptainRequest, MatchRequest, User, Match, MatchDispute, MatchProposal } from '../models';
+import { UserRole, Team, CaptainRequest, MatchRequest, User, Match, MatchDispute, MatchProposal, TeamInvitation, TeamJoinRequest } from '../models';
 
 export async function getNotifications(userId: number, role: UserRole) {
   if (role === UserRole.ADMIN) {
@@ -23,7 +23,7 @@ export async function getNotifications(userId: number, role: UserRole) {
 
   if (role === UserRole.CAPTAIN) {
     const team = await Team.findOne({ where: { captainId: userId, isActive: true } });
-    if (!team) return { type: 'captain', captainRequests: [], matchRequests: [], proposals: [], disputes: [] };
+    if (!team) return { type: 'captain', captainRequests: [], matchRequests: [], proposals: [], disputes: [], joinRequests: [] };
 
     const matchReqs = await MatchRequest.findAll({
       where: { opposingTeamId: team.id, status: 'pending' },
@@ -51,14 +51,28 @@ export async function getNotifications(userId: number, role: UserRole) {
       }
     }
 
-    return { type: 'captain', captainRequests: [], matchRequests: matchReqs, proposals: pendingProposals, disputes: [] };
+    const joinRequests = await TeamJoinRequest.findAll({
+      where: { teamId: team.id, status: 'pending' },
+      include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'username'] }],
+      order: [['createdAt', 'DESC']],
+    });
+
+    return { type: 'captain', captainRequests: [], matchRequests: matchReqs, proposals: pendingProposals, disputes: [], joinRequests };
   }
 
   const myReq = await CaptainRequest.findOne({
     where: { userId },
     order: [['createdAt', 'DESC']],
   });
-  return { type: 'player', captainRequests: myReq ? [myReq] : [], matchRequests: [], proposals: [], disputes: [] };
+  const teamInvitations = await TeamInvitation.findAll({
+    where: { invitedUserId: userId, status: 'pending' },
+    include: [
+      { model: Team, as: 'team', attributes: ['id', 'name'] },
+      { model: User, as: 'inviter', attributes: ['id', 'firstName', 'lastName'] },
+    ],
+    order: [['createdAt', 'DESC']],
+  });
+  return { type: 'player', captainRequests: myReq ? [myReq] : [], matchRequests: [], proposals: [], disputes: [], teamInvitations };
 }
 
 export async function getCount(userId: number, role: UserRole): Promise<number> {
@@ -84,8 +98,10 @@ export async function getCount(userId: number, role: UserRole): Promise<number> 
       if (proposal && proposal.proposingTeamId !== team.id) proposalCount++;
     }
 
-    return matchReqCount + proposalCount;
+    const joinReqCount = await TeamJoinRequest.count({ where: { teamId: team.id, status: 'pending' } });
+    return matchReqCount + proposalCount + joinReqCount;
   }
 
-  return 0;
+  const invitationCount = await TeamInvitation.count({ where: { invitedUserId: userId, status: 'pending' } });
+  return invitationCount;
 }

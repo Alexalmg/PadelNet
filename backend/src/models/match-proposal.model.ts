@@ -8,6 +8,7 @@ interface MatchProposalAttributes {
   proposedBy: number;
   proposedDate: Date;
   location?: string;
+  clubId?: number;
   message?: string;
   status: 'pending' | 'accepted' | 'rejected' | 'countered';
   createdAt?: Date;
@@ -23,6 +24,7 @@ export class MatchProposal extends Model<MatchProposalAttributes, MatchProposalC
   declare proposedBy: number;
   declare proposedDate: Date;
   declare location: string;
+  declare clubId: number;
   declare message: string;
   declare status: 'pending' | 'accepted' | 'rejected' | 'countered';
   declare createdAt: Date;
@@ -36,6 +38,7 @@ MatchProposal.init({
   proposedBy: { type: DataTypes.INTEGER, allowNull: false },
   proposedDate: { type: DataTypes.DATE, allowNull: false },
   location: { type: DataTypes.STRING(255) },
+  clubId: { type: DataTypes.INTEGER },
   message: { type: DataTypes.TEXT },
   status: { type: DataTypes.STRING(20), defaultValue: 'pending' },
 }, {

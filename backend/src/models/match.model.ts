@@ -12,6 +12,7 @@ interface MatchAttributes {
   weekNumber: number;
   status: MatchStatus;
   location?: string;
+  clubId?: number;
   homeTeamConfirmed: boolean;
   awayTeamConfirmed: boolean;
   createdAt?: Date;
@@ -29,6 +30,7 @@ export class Match extends Model<MatchAttributes, MatchCreationAttributes> imple
   declare weekNumber: number;
   declare status: MatchStatus;
   declare location: string;
+  declare clubId?: number;
   declare homeTeamConfirmed: boolean;
   declare awayTeamConfirmed: boolean;
   declare createdAt: Date;
@@ -44,6 +46,7 @@ Match.init({
   weekNumber: { type: DataTypes.INTEGER, allowNull: false },
   status: { type: DataTypes.STRING(20), defaultValue: 'pending_proposal' },
   location: { type: DataTypes.STRING(255) },
+  clubId: { type: DataTypes.INTEGER, allowNull: true },
   homeTeamConfirmed: { type: DataTypes.BOOLEAN, defaultValue: false },
   awayTeamConfirmed: { type: DataTypes.BOOLEAN, defaultValue: false },
 }, {

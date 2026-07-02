@@ -20,6 +20,8 @@ import achievementsRoutes from './routes/achievements.routes';
 import paymentsRoutes from './routes/payments.routes';
 import sponsorsRoutes from './routes/sponsors.routes';
 import announcementsRoutes from './routes/announcements.routes';
+import teamInvitationsRoutes from './routes/team-invitations.routes';
+import clubsRoutes from './routes/clubs.routes';
 import { startActivityCheckJob } from './jobs/activity-check.job';
 import { runSeed } from './seed';
 
@@ -28,7 +30,7 @@ app.set('trust proxy', 1);
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: process.env.CORS_ORIGIN?.split(',') || '*', credentials: true }));
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: process.env.NODE_ENV === 'production' ? 100 : 10000 }));
 app.use(express.json());
 
 app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date() }));
@@ -47,6 +49,8 @@ app.use('/api/achievements', achievementsRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/sponsors', sponsorsRoutes);
 app.use('/api/announcements', announcementsRoutes);
+app.use('/api/team-invitations', teamInvitationsRoutes);
+app.use('/api/clubs', clubsRoutes);
 
 async function runSchemaMigrations() {
   await sequelize.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS location VARCHAR(255)`);
@@ -69,6 +73,47 @@ async function runSchemaMigrations() {
   await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "preferredSide" VARCHAR(10)`);
   await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "yearsPlaying" INTEGER`);
   await sequelize.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "preferredCourt" VARCHAR(20)`);
+  // Clubs
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS clubs (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      address VARCHAR(500) NOT NULL,
+      latitude DECIMAL(10,7) NOT NULL,
+      longitude DECIMAL(10,7) NOT NULL,
+      phone VARCHAR(30),
+      "isActive" BOOLEAN NOT NULL DEFAULT true,
+      "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+      "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `);
+  await sequelize.query(`ALTER TABLE matches ADD COLUMN IF NOT EXISTS "clubId" INTEGER REFERENCES clubs(id)`);
+  // Team join requests
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS team_join_requests (
+      id SERIAL PRIMARY KEY,
+      "teamId" INTEGER NOT NULL REFERENCES teams(id),
+      "userId" INTEGER NOT NULL REFERENCES users(id),
+      status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','accepted','rejected')),
+      "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+      "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `);
+  // clubId on match proposals
+  await sequelize.query(`ALTER TABLE match_proposals ADD COLUMN IF NOT EXISTS "clubId" INTEGER REFERENCES clubs(id)`);
+
+  // Team invitations
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS team_invitations (
+      id SERIAL PRIMARY KEY,
+      "teamId" INTEGER NOT NULL REFERENCES teams(id),
+      "invitedUserId" INTEGER NOT NULL REFERENCES users(id),
+      "invitedBy" INTEGER NOT NULL REFERENCES users(id),
+      status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','accepted','declined')),
+      "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+      "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `);
 }
 
 // Serve frontend in production (when files are present alongside dist/)
@@ -88,6 +133,7 @@ async function startServer() {
   console.log('Schema migrations applied');
 
   await runSeed();
+  console.log('Seed ejecutado');
 
   const port = process.env.PORT || 3000;
   app.listen(port, () => console.log(`Server running on port ${port}`));

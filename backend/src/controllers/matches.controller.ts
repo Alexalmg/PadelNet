@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import { Match, Team, MatchResult, UserRole, MatchProposal } from '../models';
+import { Match, Team, MatchResult, UserRole, MatchProposal, Lineup, User, PlayerStats } from '../models';
 import { updateAfterMatch } from '../services/stats.service';
 import { createSystemAnnouncement } from '../services/announcement.service';
 
@@ -41,6 +41,21 @@ export async function getMatch(req: Request, res: Response): Promise<void> {
         include: [{ model: Team, as: 'proposingTeam', attributes: ['id', 'name'] }],
         order: [['createdAt', 'DESC']],
         separate: true,
+      },
+      {
+        model: Lineup, as: 'lineups',
+        include: [
+          {
+            model: User, as: 'player1',
+            attributes: ['id', 'firstName', 'lastName', 'username', 'padelLevel', 'preferredSide', 'yearsPlaying'],
+            include: [{ model: PlayerStats, as: 'stats', separate: true, order: [['createdAt', 'DESC']], limit: 1 }],
+          },
+          {
+            model: User, as: 'player2',
+            attributes: ['id', 'firstName', 'lastName', 'username', 'padelLevel', 'preferredSide', 'yearsPlaying'],
+            include: [{ model: PlayerStats, as: 'stats', separate: true, order: [['createdAt', 'DESC']], limit: 1 }],
+          },
+        ],
       },
     ],
   });
